@@ -1,0 +1,11 @@
+[package]
+name = "wincore"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Win32 thread creation, pinning, priority and monitoring, with hand-written FFI (Windows only)"
+
+[lints]
+workspace = true
