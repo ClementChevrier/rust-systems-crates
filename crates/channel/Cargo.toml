@@ -1,0 +1,44 @@
+[package]
+name = "channel"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Bounded lock-free SPSC and MPSC queues, and a latest-value snapshot channel"
+
+[dependencies]
+# Benchmark baselines only. Comparing against the reference implementations
+# means linking them, which std alone cannot do. Optional, and never enabled
+# outside the benchmarks.
+rtrb              = { version = "0.3.4", optional = true }
+crossbeam-queue   = { version = "0.3", optional = true }
+crossbeam-channel = { version = "0.5", optional = true }
+
+[dev-dependencies]
+wincore.workspace = true
+
+[target.'cfg(loom)'.dependencies]
+loom = "0.7.2"
+
+[lints]
+workspace = true
+
+[features]
+nightly-benches   = []
+crossbeam-queue   = ["dep:crossbeam-queue"]
+crossbeam-channel = ["dep:crossbeam-channel"]
+
+[[bench]]
+name = "spsc_compare"
+test = false
+required-features = ["nightly-benches"]
+
+[[bench]]
+name = "mpsc_compare"
+test = false
+required-features = ["nightly-benches"]
+
+[[bench]]
+name = "latency"
+harness = false
