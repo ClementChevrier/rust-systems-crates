@@ -5,6 +5,11 @@
 Four crates from the runtime of a live trading engine I am building, plus one
 development tool.
 
+The code, the design decisions and the measurements are mine. 
+These crates are building blocks of my own engine, so I originally documented them only where it was necessary.
+For this repository, I used an AI assistant to document the rest, including the READMEs, working from my notes and results.
+If the documentation and the code disagree, trust the code.
+
 They share one rule: standard library first. A third-party crate is allowed only
 when something is impossible with `std` alone, and the reason gets written down
 before the code. None of these has a third-party dependency in production. The
