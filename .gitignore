@@ -1,0 +1,17 @@
+# Build output
+/target/
+**/target/
+
+# Logger runtime output
+.logs/
+
+# tasks! macro output, regenerated at every build
+.tasks/
+*.tmp
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
