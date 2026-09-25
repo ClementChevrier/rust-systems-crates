@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: fmt, test, clippy, docs
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain and components pinned in rust-toolchain.toml.
+      - run: rustup toolchain install
+      - run: cargo fmt --all -- --check
+      - run: cargo build --workspace --all-targets
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  loom:
+    name: loom models
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install
+      - run: cargo test -p channel --release
+        env:
+          RUSTFLAGS: --cfg loom
+          LOOM_MAX_PREEMPTIONS: 3
+
+  benches:
+    name: benches compile
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      # An explicit +nightly overrides rust-toolchain.toml.
+      - run: rustup toolchain install nightly --profile minimal
+      - run: cargo +nightly check -p channel     --benches --features nightly-benches
+      - run: cargo +nightly check -p logger      --benches --features nightly-benches
+      - run: cargo +nightly check -p ring_buffer --benches --features nightly-benches
