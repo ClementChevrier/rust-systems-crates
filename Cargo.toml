@@ -1,0 +1,41 @@
+[workspace]
+resolver = "3"
+# tasks_macros and tasks_args are implicit members: they are path dependencies
+# living inside the workspace directory.
+members = ["crates/*"]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.97"
+authors      = ["Clément Chevrier"]
+publish      = false
+
+[workspace.dependencies]
+channel = { path = "crates/channel" }
+wincore = { path = "crates/wincore" }
+
+[workspace.lints.rust]
+missing_docs    = "warn"
+unreachable_pub = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(loom)',
+    'cfg(channel_pad, values("64", "128"))',
+] }
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "warn"
+unwrap_used                = "warn"
+panic                      = "warn"
+todo                       = "warn"
+unimplemented              = "warn"
+module_inception           = "allow"
+
+[profile.release]
+lto           = "fat"
+codegen-units = 1
+debug         = "line-tables-only"
+
+[profile.bench]
+lto           = "fat"
+codegen-units = 1
