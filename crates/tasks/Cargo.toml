@@ -1,0 +1,15 @@
+[package]
+name = "tasks"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "The `task!` macro and its metadata types: a todo!() tracked as a markdown file"
+
+[dependencies]
+tasks_args   = { path = "args" }
+tasks_macros = { path = "macros" }
+
+[lints]
+workspace = true

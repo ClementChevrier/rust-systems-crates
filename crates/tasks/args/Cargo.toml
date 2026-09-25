@@ -1,0 +1,11 @@
+[package]
+name = "tasks_args"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Task metadata enums shared by the `task!` macro and its facade"
+
+[lints]
+workspace = true
