@@ -56,6 +56,13 @@ impl LogWorker {
         let mut last_level_check = Instant::now();
 
         'work_loop: loop {
+            // Read before draining, not after: `is_closed` is an Acquire load,
+            // so every command pushed before the close, `Shutdown` included,
+            // is visible to the drain below. Checked after the drain instead,
+            // a `Shutdown` pushed during the drain was missed, then silently
+            // discarded by the final drain.
+            let closed = self.receiver.is_closed();
+
             let mut did_work = false;
             for msg in self.receiver.drain() {
                 did_work = true;
@@ -71,7 +78,10 @@ impl LogWorker {
 
             self.report_drops();
 
-            if self.receiver.is_closed() {
+            // The drain stops at a slot another thread has reserved but not
+            // written yet, and a `Shutdown` may sit behind it: leave only once
+            // everything has been read.
+            if closed && self.receiver.is_empty() {
                 self.output.write(LogMessage::senders_dead());
                 self.shutdown();
                 break;

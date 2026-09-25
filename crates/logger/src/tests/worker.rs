@@ -39,6 +39,15 @@ fn spawn_worker(
     mpsc::Producer<LogCommand, CHANNEL_LEN>,
     thread::JoinHandle<()>,
 ) {
+    let (sender, receiver) = mpsc::channel();
+    (sender, spawn_worker_on(dir, receiver))
+}
+
+/// Starts a worker on an existing channel, which the test may have filled first.
+fn spawn_worker_on(
+    dir: &Path,
+    receiver: mpsc::Consumer<LogCommand, CHANNEL_LEN>,
+) -> thread::JoinHandle<()> {
     let manager = FileManager::new(
         dir.to_path_buf(),
         "log".to_string(),
@@ -48,8 +57,7 @@ fn spawn_worker(
         crate::SyncPolicy::OnRotation,
     )
     .expect("file manager must be creatable");
-    let (sender, receiver) = mpsc::channel();
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         let mut worker = LogWorker::new(
             manager,
             DEFAULT_SLEEP_MAIN_LOOP,
@@ -58,8 +66,7 @@ fn spawn_worker(
             DEFAULT_POLL_LEVEL_INTERVAL,
         );
         worker.run();
-    });
-    (sender, handle)
+    })
 }
 
 fn log_content(dir: &Path) -> String {
@@ -148,5 +155,36 @@ fn a_burst_larger_than_the_channel_is_fully_written_in_order() {
         assert!(position >= previous, "burst {i:04} out of order");
         previous = position;
     }
+    let _ = fs::remove_dir_all(&dir);
+}
+
+/// Regression: `Logger::shutdown` pushes `Shutdown` then closes the channel at
+/// once. With a full channel, the command can only get in while the worker is
+/// emptying an older snapshot; the worker then saw `closed`, took the "senders
+/// dead" path and silently discarded the command, so the shutdown marker was
+/// never written. Filling the channel before the worker starts makes that
+/// interleaving the normal case.
+#[test]
+fn shutdown_pushed_into_a_full_channel_is_honoured_despite_the_close() {
+    let dir = temp_dir("full_shutdown");
+    let _ = fs::remove_dir_all(&dir);
+    let (sender, receiver) = mpsc::channel::<LogCommand, CHANNEL_LEN>();
+    for i in 0..CHANNEL_LEN {
+        push_blocking(&sender, msg(&format!("queued {i:04}")));
+    }
+    let handle = spawn_worker_on(&dir, receiver);
+
+    push_blocking(&sender, LogCommand::Shutdown);
+    sender.close();
+    handle.join().expect("worker must not panic");
+
+    let content = log_content(&dir);
+    assert!(content.contains(&format!("queued {:04}", CHANNEL_LEN - 1)));
+    assert_eq!(
+        content.matches("Received shutdown command!").count(),
+        1,
+        "the shutdown marker must be written"
+    );
+    assert!(!content.contains("All senders are disconnected"));
     let _ = fs::remove_dir_all(&dir);
 }
