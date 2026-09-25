@@ -1,0 +1,38 @@
+[package]
+name = "ring_buffer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+authors.workspace = true
+description = "Fixed-capacity ring buffer with overwrite and bounded push semantics"
+# benches/macros.rs is a shared module included with `mod macros;`, not a
+# target. Without this, auto-discovery would also build it as a standalone
+# bench and cargo would warn "file found in multiple build targets".
+autobenches = false
+
+[lints]
+workspace = true
+
+[features]
+nightly-benches = []
+
+[[bench]]
+name = "standard"
+test = false
+required-features = ["nightly-benches"]
+
+[[bench]]
+name = "comparison_power_of_two"
+test = false
+required-features = ["nightly-benches"]
+
+[[bench]]
+name = "comparison_non_power_of_two"
+test = false
+required-features = ["nightly-benches"]
+
+[[bench]]
+name = "ring_statistics"
+test = false
+required-features = ["nightly-benches"]
